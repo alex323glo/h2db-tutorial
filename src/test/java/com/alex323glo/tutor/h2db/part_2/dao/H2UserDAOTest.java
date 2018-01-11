@@ -1,0 +1,100 @@
+package com.alex323glo.tutor.h2db.part_2.dao;
+
+import com.alex323glo.tutor.h2db.part_2.model.response.Response;
+import com.alex323glo.tutor.h2db.part_2.model.response.ResponseStatus;
+import com.alex323glo.tutor.h2db.part_2.model.user.User;
+import com.alex323glo.tutor.h2db.part_2.model.user.UserType;
+import org.junit.*;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+
+import static org.junit.Assert.*;
+
+public class H2UserDAOTest {
+
+    private DAO<String, User> userDAO;
+    private Connection dbConnection;
+
+    private static final String DB_URL =
+            "jdbc:h2:/home/alex323glo/Java/Idea/h2db-tutorial/src/test/resources/test_user_db/test";
+    private static final String DB_TABLE_NAME = "users";
+    private static final String DB_USER = "user";
+    private static final String DB_PASS = "pass";
+
+    private static final String TEST_USERNAME = "test_username";
+    private static final String TEST_PASSWORD = "test_password";
+    private static final UserType TEST_USERTYPE = UserType.USER;
+
+    @BeforeClass
+    public static void createTestTable() throws Exception {
+        Connection tempConnection = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);
+        tempConnection.createStatement().execute(
+                "CREATE TABLE users(username VARCHAR(45), password VARCHAR(45), TYPE VARCHAR(45));"
+        );
+    }
+
+    @AfterClass
+    public static void dropTestTable() throws Exception {
+        Connection tempConnection = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);
+        tempConnection.createStatement().execute("DROP TABLE users;");
+    }
+
+    @Before
+    public void setUp() throws Exception {
+        dbConnection = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);
+        dbConnection.createStatement().execute("DELETE FROM " + DB_TABLE_NAME + ";");
+        userDAO = new H2UserDAO(dbConnection, DB_TABLE_NAME);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        dbConnection.close();
+    }
+
+    @Test
+    public void createWithOK() throws Exception {
+        User user = new User(TEST_USERNAME, TEST_PASSWORD, TEST_USERTYPE);
+        Response response = userDAO.create(user.getUsername(), user);
+        assertEquals(ResponseStatus.OK, response.getStatus());
+    }
+
+    @Test
+    public void createWithKO() throws Exception {
+        User user = new User(TEST_USERNAME, TEST_PASSWORD, TEST_USERTYPE);
+        Response r1 = userDAO.create(user.getUsername(), user);
+        Response response = userDAO.create(user.getUsername(), user);
+        assertEquals(ResponseStatus.KO, response.getStatus());
+    }
+
+    @Test
+    public void createWithException() throws Exception {
+        // TODO finish Unit Test
+    }
+
+    @Test
+    public void read() throws Exception {
+        // TODO finish Unit Test
+    }
+
+    @Test
+    public void update() throws Exception {
+        // TODO finish Unit Test
+    }
+
+    @Test
+    public void delete() throws Exception {
+        // TODO finish Unit Test
+    }
+
+    @Test
+    public void getKeyset() throws Exception {
+        // TODO finish Unit Test
+    }
+
+    @Test
+    public void getAll() throws Exception {
+        // TODO finish Unit Test
+    }
+
+}

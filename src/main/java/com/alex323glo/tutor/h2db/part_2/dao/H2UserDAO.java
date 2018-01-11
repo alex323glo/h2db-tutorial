@@ -75,14 +75,16 @@ public class H2UserDAO implements DAO<String, User> {
         try {
             Statement statement = connection.createStatement();
 
-            statement.execute("SELECT * FROM " + tableName + " WHERE username=" + key + ";");
-            if (statement.getResultSet().getString("username") != null) {
+            statement.execute("SELECT * FROM " + tableName + " WHERE username='" + key + "';");
+            ResultSet resultSet = statement.getResultSet();
+
+            if (resultSet.next()) {
                 return new Response(ResponseStatus.KO);
             }
             statement.close();
 
-            statement.execute("INSERT INTO " + tableName + " VALUES(" +
-                    key + ", " + value.getPassword() + ", " + value.getUserType().toString() + ");");
+            connection.createStatement().execute("INSERT INTO " + tableName + " VALUES ('" +
+                    key + "', '" + value.getPassword() + "', '" + value.getUserType().toString() + "');");
 
             return new Response(ResponseStatus.OK);
         } catch (SQLException e) {
