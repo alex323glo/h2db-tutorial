@@ -1,12 +1,12 @@
 package com.alex323glo.tutor.h2db.part_2.dao;
 
 import com.alex323glo.tutor.h2db.part_2.exception.DAOException;
-import com.alex323glo.tutor.h2db.part_2.exception.ValidationException;
 import com.alex323glo.tutor.h2db.part_2.model.response.Response;
 import com.alex323glo.tutor.h2db.part_2.model.response.ResponseStatus;
 import com.alex323glo.tutor.h2db.part_2.model.user.User;
 import com.alex323glo.tutor.h2db.part_2.model.user.UserType;
-import com.alex323glo.tutor.h2db.part_2.util.Validator;
+
+import static com.alex323glo.tutor.h2db.part_2.util.Validator.*;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -22,6 +22,7 @@ import java.util.Set;
  * @version 1.0
  *
  * @see DAO
+ * @see User
  */
 public class H2UserDAO implements DAO<String, User> {
 
@@ -41,7 +42,7 @@ public class H2UserDAO implements DAO<String, User> {
     }
 
     public void setConnection(Connection connection) throws DAOException {
-        checkConnection(connection);
+        checkDAOConnection(connection);
         this.connection = connection;
     }
 
@@ -70,15 +71,14 @@ public class H2UserDAO implements DAO<String, User> {
      */
     @Override
     public Response create(String key, User value) throws DAOException {
-        checkConnection(connection);
+        checkDAOConnection(connection);
 
         try {
             Statement statement = connection.createStatement();
 
             statement.execute("SELECT * FROM " + tableName + " WHERE username='" + key + "';");
-            ResultSet resultSet = statement.getResultSet();
 
-            if (resultSet.next()) {
+            if (statement.getResultSet().next()) {
                 return new Response(ResponseStatus.KO);
             }
             statement.close();
@@ -107,7 +107,7 @@ public class H2UserDAO implements DAO<String, User> {
      */
     @Override
     public Response<User> read(String key) throws DAOException {
-        checkConnection(connection);
+        checkDAOConnection(connection);
 
         try {
             Statement statement = connection.createStatement();
@@ -195,12 +195,5 @@ public class H2UserDAO implements DAO<String, User> {
         throw new UnsupportedOperationException();
     }
 
-    private static void checkConnection(Connection connection) throws DAOException {
-        try {
-            Validator.validate(connection);
-        } catch (ValidationException e) {
-            e.printStackTrace();
-            throw new DAOException("connection is not valid", e);
-        }
-    }
+
 }

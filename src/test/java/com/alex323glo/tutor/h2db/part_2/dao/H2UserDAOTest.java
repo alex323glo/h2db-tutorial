@@ -62,7 +62,8 @@ public class H2UserDAOTest {
     @Test
     public void createWithKO() throws Exception {
         User user = new User(TEST_USERNAME, TEST_PASSWORD, TEST_USERTYPE);
-        Response r1 = userDAO.create(user.getUsername(), user);
+        userDAO.create(user.getUsername(), user);
+
         Response response = userDAO.create(user.getUsername(), user);
         assertEquals(ResponseStatus.KO, response.getStatus());
     }
