@@ -2,7 +2,15 @@ package com.alex323glo.tutor.h2db.part_2.controller;
 
 import com.alex323glo.tutor.h2db.part_2.dao.DAO;
 import com.alex323glo.tutor.h2db.part_2.exception.AppException;
+import com.alex323glo.tutor.h2db.part_2.exception.DAOException;
+import com.alex323glo.tutor.h2db.part_2.exception.ValidationException;
+import com.alex323glo.tutor.h2db.part_2.model.response.Response;
+import com.alex323glo.tutor.h2db.part_2.model.response.ResponseStatus;
+import com.alex323glo.tutor.h2db.part_2.model.token.AccessToken;
 import com.alex323glo.tutor.h2db.part_2.model.user.User;
+
+import static com.alex323glo.tutor.h2db.part_2.util.Validator.*;
+import static com.alex323glo.tutor.h2db.part_2.util.Generator.*;
 
 /**
  * Main Application controller implementation.
@@ -15,9 +23,11 @@ import com.alex323glo.tutor.h2db.part_2.model.user.User;
 public class MainControllerImpl implements MainController {
 
     private DAO<String, User> userDAO;
+    private DAO<String, AccessToken> accessTokenDAO;
 
-    public MainControllerImpl(DAO<String, User> userDAO) {
-        this.userDAO = userDAO;
+    public MainControllerImpl(DAO<String, User> userDAO, DAO<String, AccessToken> accessTokenDAO) {
+        setUserDAO(userDAO);
+        setAccessTokenDAO(accessTokenDAO);
     }
 
     public DAO<String, User> getUserDAO() {
@@ -25,7 +35,21 @@ public class MainControllerImpl implements MainController {
     }
 
     public void setUserDAO(DAO<String, User> userDAO) {
+        if (userDAO == null) {
+            throw new NullPointerException("userDAO is null");
+        }
         this.userDAO = userDAO;
+    }
+
+    public DAO<String, AccessToken> getAccessTokenDAO() {
+        return accessTokenDAO;
+    }
+
+    public void setAccessTokenDAO(DAO<String, AccessToken> accessTokenDAO) {
+        if (accessTokenDAO == null) {
+            throw new NullPointerException("accessTokenDAO is null");
+        }
+        this.accessTokenDAO = accessTokenDAO;
     }
 
     /**
@@ -40,8 +64,33 @@ public class MainControllerImpl implements MainController {
      */
     @Override
     public String register(String username, String password) throws AppException {
-        // TODO finish implementation
-        return null;
+        try {
+            validateId(username);
+            validateNotNull(password);
+        } catch (ValidationException e) {
+            e.printStackTrace();
+            throw new AppException("arguments didn't pass validation", e);
+        }
+
+        User newUser = new User(username, password);
+
+        try {
+            Response response = userDAO.create(newUser.getUsername(), newUser);
+            if (response.getStatus().equals(ResponseStatus.KO)) {
+                // TODO row below could be replaced with logger
+                System.out.printf("MainController: User \"" + username + "\" already exists!");
+                return null;
+            }
+
+            String newToken = generateUniqueToken(accessTokenDAO.getKeyset());
+            AccessToken newAccessToken = new AccessToken(newToken, newUser.getUsername());
+            accessTokenDAO.create(newAccessToken.getToken(), newAccessToken);
+
+            return newToken;
+        } catch (DAOException e) {
+            e.printStackTrace();
+            throw new AppException("can't ork with DAO", e);
+        }
     }
 
     /**
