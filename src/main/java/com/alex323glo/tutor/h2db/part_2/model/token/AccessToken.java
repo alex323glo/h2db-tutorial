@@ -1,25 +1,29 @@
 package com.alex323glo.tutor.h2db.part_2.model.token;
 
+import com.alex323glo.tutor.h2db.part_2.model.user.UserType;
+
+import java.io.Serializable;
+
 /**
  * Access Token model.
  *
  * @author alex323glo
  * @version 1.0
  */
-public class AccessToken {
+public class AccessToken implements Serializable {
 
     private String token;
     private String username;
-    private AccessTokenType type;
+    private UserType type;
 
     public AccessToken(String token, String username) {
         setToken(token);
 
         this.username = username;
-        type = AccessTokenType.USER;
+        type = UserType.USER;
     }
 
-    public AccessToken(String token, String username, AccessTokenType type) {
+    public AccessToken(String token, String username, UserType type) {
         this.token = token;
         this.username = username;
         this.type = type;
@@ -44,11 +48,11 @@ public class AccessToken {
         this.username = username;
     }
 
-    public AccessTokenType getType() {
+    public UserType getType() {
         return type;
     }
 
-    public void setType(AccessTokenType type) {
+    public void setType(UserType type) {
         this.type = type;
     }
 

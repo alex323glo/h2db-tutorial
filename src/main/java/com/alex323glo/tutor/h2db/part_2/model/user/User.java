@@ -1,12 +1,14 @@
 package com.alex323glo.tutor.h2db.part_2.model.user;
 
+import java.io.Serializable;
+
 /**
  * User model.
  * 
  * @author alex323glo 
  * @version 1.0
  */
-public class User {
+public class User implements Serializable {
     
     private String username;
     private String password;
