@@ -121,16 +121,16 @@ public class H2UserDAOTest {
         User user = new User(TEST_USERNAME, TEST_PASSWORD, TEST_USERTYPE);
         userDAO.create(user.getUsername(), user);
 
-        Response<User> updateResponse = userDAO.delete(TEST_USERNAME);
+        Response<User> response = userDAO.delete(TEST_USERNAME);
 
-        assertEquals(ResponseStatus.OK, updateResponse.getStatus());
-        assertEquals(user, updateResponse.getBody());
+        assertEquals(ResponseStatus.OK, response.getStatus());
+        assertEquals(user, response.getBody());
     }
 
     @Test
     public void deleteWithKO() throws Exception {
-        Response<User> updateResponse = userDAO.delete(TEST_USERNAME);
-        assertEquals(ResponseStatus.KO, updateResponse.getStatus());
+        Response<User> response = userDAO.delete(TEST_USERNAME);
+        assertEquals(ResponseStatus.KO, response.getStatus());
     }
 
     @Test
