@@ -3,11 +3,15 @@ package com.alex323glo.tutor.h2db.part_2.dao;
 import com.alex323glo.tutor.h2db.part_2.model.response.Response;
 import com.alex323glo.tutor.h2db.part_2.model.response.ResponseStatus;
 import com.alex323glo.tutor.h2db.part_2.model.token.AccessToken;
-import com.alex323glo.tutor.h2db.part_2.model.token.AccessTokenType;
+import com.alex323glo.tutor.h2db.part_2.model.user.UserType;
 import org.junit.*;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 import static org.junit.Assert.*;
 
@@ -24,7 +28,7 @@ public class H2AccessTokenDAOTest {
 
     private static final String TEST_ACCESS_TOKEN = "test_access_token";
     private static final String TEST_USERNAME = "test_username";
-    private static final AccessTokenType TEST_ACCESS_TOKEN_TYPE = AccessTokenType.USER;
+    private static final UserType TEST_ACCESS_TOKEN_TYPE = UserType.USER;
 
     @BeforeClass
     public static void createTestTable() throws Exception {
@@ -69,33 +73,113 @@ public class H2AccessTokenDAOTest {
     }
 
     @Test
-    public void createWithException() throws Exception {
-        // TODO finish Unit Test
+    public void readWithOK() throws Exception {
+        AccessToken accessToken = new AccessToken(TEST_ACCESS_TOKEN, TEST_USERNAME, TEST_ACCESS_TOKEN_TYPE);
+        accessTokenDAO.create(accessToken.getToken(), accessToken);
+
+        Response<AccessToken> response = accessTokenDAO.read(TEST_ACCESS_TOKEN);
+        assertEquals(ResponseStatus.OK, response.getStatus());
+        assertEquals(accessToken, response.getBody());
+    }
+
+
+    @Test
+    public void readWithKO() throws Exception {
+        Response<AccessToken> response = accessTokenDAO.read(TEST_ACCESS_TOKEN);
+        assertEquals(ResponseStatus.KO, response.getStatus());
     }
 
     @Test
-    public void read() throws Exception {
-        // TODO finish Unit Test
+    public void updateWithOK() throws Exception {
+        AccessToken accessToken = new AccessToken(TEST_ACCESS_TOKEN, TEST_USERNAME, TEST_ACCESS_TOKEN_TYPE);
+        accessTokenDAO.create(accessToken.getToken(), accessToken);
+
+        AccessToken newAccessToken = new AccessToken(
+                TEST_ACCESS_TOKEN + "1",
+                TEST_USERNAME + "1",
+                TEST_ACCESS_TOKEN_TYPE.equals(UserType.USER) ? UserType.ROOT : UserType.USER
+        );
+        Response<AccessToken> updateResponse = accessTokenDAO.update(TEST_ACCESS_TOKEN, newAccessToken);
+
+        assertEquals(ResponseStatus.OK, updateResponse.getStatus());
+        assertEquals(accessToken, updateResponse.getBody());
+
+        Response<AccessToken> readResponse = accessTokenDAO.read(newAccessToken.getToken());
+
+        assertEquals(newAccessToken, readResponse.getBody());
     }
 
     @Test
-    public void update() throws Exception {
-        // TODO finish Unit Test
+    public void updateWithKO() throws Exception {
+        AccessToken accessToken = new AccessToken(TEST_ACCESS_TOKEN, TEST_USERNAME, TEST_ACCESS_TOKEN_TYPE);
+        Response<AccessToken> updateResponse = accessTokenDAO.update(TEST_ACCESS_TOKEN, accessToken);
+        assertEquals(ResponseStatus.KO, updateResponse.getStatus());
     }
 
     @Test
-    public void delete() throws Exception {
-        // TODO finish Unit Test
+    public void deleteWithOK() throws Exception {
+        AccessToken accessToken = new AccessToken(TEST_ACCESS_TOKEN, TEST_USERNAME, TEST_ACCESS_TOKEN_TYPE);
+        accessTokenDAO.create(accessToken.getToken(), accessToken);
+
+        Response<AccessToken> response = accessTokenDAO.update(TEST_ACCESS_TOKEN, accessToken);
+
+        assertEquals(ResponseStatus.OK, response.getStatus());
+        assertEquals(accessToken, response.getBody());
     }
 
     @Test
-    public void getKeyset() throws Exception {
-        // TODO finish Unit Test
+    public void deleteWithKO() throws Exception {
+        Response<AccessToken> response = accessTokenDAO.delete(TEST_ACCESS_TOKEN);
+        assertEquals(ResponseStatus.KO, response.getStatus());
     }
 
     @Test
-    public void getAll() throws Exception {
-        // TODO finish Unit Test
+    public void getKeysetFromNotEmptyTable() throws Exception {
+        AccessToken accessToken1 = new AccessToken(TEST_ACCESS_TOKEN + "1", TEST_USERNAME,
+                TEST_ACCESS_TOKEN_TYPE);
+        AccessToken accessToken2 = new AccessToken(TEST_ACCESS_TOKEN + "2", TEST_USERNAME,
+                TEST_ACCESS_TOKEN_TYPE);
+        accessTokenDAO.create(accessToken1.getToken(), accessToken1);
+        accessTokenDAO.create(accessToken2.getToken(), accessToken2);
+
+        Set<String> expectedKeySet = new HashSet<>();
+        expectedKeySet.add(accessToken1.getToken());
+        expectedKeySet.add(accessToken2.getToken());
+
+        Set<String> actualKeySet = accessTokenDAO.getKeyset();
+
+        assertEquals(expectedKeySet, actualKeySet);
     }
 
+    @Test
+    public void getKeysetFromEmptyTable() throws Exception {
+        Set<String> expectedEmptyKeySet = new HashSet<>();
+        Set<String> actualKeySet = accessTokenDAO.getKeyset();
+        assertEquals(expectedEmptyKeySet, actualKeySet);
+    }
+
+    @Test
+    public void getAllFromNotEmptyTable() throws Exception {
+        AccessToken accessToken1 = new AccessToken(TEST_ACCESS_TOKEN + "1", TEST_USERNAME,
+                TEST_ACCESS_TOKEN_TYPE);
+        AccessToken accessToken2 = new AccessToken(TEST_ACCESS_TOKEN + "2", TEST_USERNAME,
+                TEST_ACCESS_TOKEN_TYPE);
+        accessTokenDAO.create(accessToken1.getToken(), accessToken1);
+        accessTokenDAO.create(accessToken2.getToken(), accessToken2);
+
+        Map<String, AccessToken> expectedMap = new HashMap<>();
+        expectedMap.put(accessToken1.getToken(), accessToken1);
+        expectedMap.put(accessToken2.getToken(), accessToken2);
+
+        Map<String, AccessToken> actualMap = accessTokenDAO.getAll();
+
+        assertEquals(expectedMap, actualMap);
+    }
+
+    @Test
+    public void getAllFromEmptyTable() throws Exception {
+        Map<String, AccessToken> expectedEmptyMap = new HashMap<>();
+        Map<String, AccessToken> actualMap = accessTokenDAO.getAll();
+        assertEquals(expectedEmptyMap, actualMap);
+    }
 }

@@ -4,12 +4,16 @@ import com.alex323glo.tutor.h2db.part_2.exception.DAOException;
 import com.alex323glo.tutor.h2db.part_2.model.response.Response;
 import com.alex323glo.tutor.h2db.part_2.model.response.ResponseStatus;
 import com.alex323glo.tutor.h2db.part_2.model.token.AccessToken;
+import com.alex323glo.tutor.h2db.part_2.model.user.UserType;
 
 import static com.alex323glo.tutor.h2db.part_2.util.Validator.*;
 
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -72,10 +76,9 @@ public class H2AccessTokenDAO implements DAO<String, AccessToken> {
             Statement statement = connection.createStatement();
 
             statement.execute("SELECT * FROM " + tableName + " WHERE token='" + key + "';");
-            if (statement.getResultSet().next()) {
+            if (statement.getResultSet().first()) {
                 return new Response(ResponseStatus.KO);
             }
-            statement.close();
 
             connection.createStatement().execute("INSERT INTO " + tableName + " VALUES ('" +
                     key + "', '" + value.getUsername() + "', '" + value.getType().toString() + "');");
@@ -102,7 +105,30 @@ public class H2AccessTokenDAO implements DAO<String, AccessToken> {
      */
     @Override
     public Response<AccessToken> read(String key) throws DAOException {
-        throw new UnsupportedOperationException();
+        checkDAOConnection(connection);
+
+        try {
+            Statement statement = connection.createStatement();
+
+            statement.execute("SELECT * FROM " + tableName + " WHERE token='" + key + "';");
+            ResultSet resultSet = statement.getResultSet();
+            if (!resultSet.first()) {
+                return new Response(ResponseStatus.KO);
+            }
+
+            return new Response<AccessToken>(
+                    ResponseStatus.OK,
+                    new AccessToken(
+                            resultSet.getString("token"),
+                            resultSet.getString("username"),
+                            UserType.fromString(resultSet.getString("type"))
+                    )
+            );
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new DAOException("can't execute SQL", e);
+        }
     }
 
     /**
@@ -121,7 +147,34 @@ public class H2AccessTokenDAO implements DAO<String, AccessToken> {
      */
     @Override
     public Response<AccessToken> update(String key, AccessToken value) throws DAOException {
-        throw new UnsupportedOperationException();
+        checkDAOConnection(connection);
+
+        try {
+            Statement statement = connection.createStatement();
+
+            statement.execute("SELECT * FROM " + tableName + " WHERE token='" + key + "';");
+            ResultSet resultSet = statement.getResultSet();
+            if (!resultSet.first()) {
+                return new Response(ResponseStatus.KO);
+            }
+
+            AccessToken oldAccessToken = new AccessToken(
+                    resultSet.getString("token"),
+                    resultSet.getString("username"),
+                    UserType.fromString(resultSet.getString("type"))
+            );
+
+            statement.execute("UPDATE " + tableName + " SET " +
+                    "token='" + value.getToken() + "', " +
+                    "username='" + value.getUsername() + "', " +
+                    "type='" + value.getType().toString() + "' " +
+                    "WHERE token='" + key + "';");
+
+            return new Response<AccessToken>(ResponseStatus.OK, oldAccessToken);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new DAOException("can't execute SQL", e);
+        }
     }
 
     /**
@@ -139,7 +192,30 @@ public class H2AccessTokenDAO implements DAO<String, AccessToken> {
      */
     @Override
     public Response<AccessToken> delete(String key) throws DAOException {
-        throw new UnsupportedOperationException();
+        checkDAOConnection(connection);
+
+        try {
+            Statement statement = connection.createStatement();
+
+            statement.execute("SELECT * FROM " + tableName + " WHERE token='" + key + "';");
+            ResultSet resultSet = statement.getResultSet();
+            if (!resultSet.first()) {
+                return new Response(ResponseStatus.KO);
+            }
+
+            AccessToken removedAccessToken = new AccessToken(
+                    resultSet.getString("token"),
+                    resultSet.getString("username"),
+                    UserType.fromString(resultSet.getString("type"))
+            );
+
+            statement.execute("DELETE FROM " + tableName + " WHERE token='" + key + "';");
+
+            return new Response<AccessToken>(ResponseStatus.OK, removedAccessToken);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new DAOException("can't execute SQL", e);
+        }
     }
 
     /**
@@ -152,7 +228,28 @@ public class H2AccessTokenDAO implements DAO<String, AccessToken> {
      */
     @Override
     public Set<String> getKeyset() throws DAOException {
-        throw new UnsupportedOperationException();
+        checkDAOConnection(connection);
+
+        try {
+            Statement statement = connection.createStatement();
+
+            statement.execute("SELECT token FROM " + tableName + ";");
+            ResultSet resultSet = statement.getResultSet();
+            if (!resultSet.first()) {
+                return new HashSet<>();
+            }
+
+            Set<String> resultKeySet = new HashSet<>();
+            do {
+                resultKeySet.add(resultSet.getString(1));
+            } while (resultSet.next());
+
+            return resultKeySet;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new DAOException("can't execute SQL", e);
+        }
     }
 
     /**
@@ -165,6 +262,33 @@ public class H2AccessTokenDAO implements DAO<String, AccessToken> {
      */
     @Override
     public Map<String, AccessToken> getAll() throws DAOException {
-        throw new UnsupportedOperationException();
+        checkDAOConnection(connection);
+
+        try {
+            Statement statement = connection.createStatement();
+
+            statement.execute("SELECT * FROM " + tableName + ";");
+            ResultSet resultSet = statement.getResultSet();
+            if (!resultSet.first()) {
+                return new HashMap<>();
+            }
+
+            HashMap<String, AccessToken> resultMap = new HashMap<>();
+            do {
+                resultMap.put(
+                        resultSet.getString("token"),
+                        new AccessToken(
+                                resultSet.getString("token"),
+                                resultSet.getString("username"),
+                                UserType.fromString(resultSet.getString("type"))
+                        )
+                );
+            } while (resultSet.next());
+
+            return resultMap;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new DAOException("can't execute SQL", e);
+        }
     }
 }
