@@ -12,6 +12,8 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -78,13 +80,16 @@ public class H2UserDAO implements DAO<String, User> {
 
             statement.execute("SELECT * FROM " + tableName + " WHERE username='" + key + "';");
 
-            if (statement.getResultSet().next()) {
+            if (statement.getResultSet().first()) {
                 return new Response(ResponseStatus.KO);
             }
             statement.close();
 
             connection.createStatement().execute("INSERT INTO " + tableName + " VALUES ('" +
-                    key + "', '" + value.getPassword() + "', '" + value.getUserType().toString() + "');");
+                    key + "', '" +
+                    value.getPassword() + "', '" +
+                    value.getUserType().toString() + "');"
+            );
 
             return new Response(ResponseStatus.OK);
         } catch (SQLException e) {
@@ -112,18 +117,20 @@ public class H2UserDAO implements DAO<String, User> {
         try {
             Statement statement = connection.createStatement();
 
-            statement.execute("SELECT * FROM " + tableName + " WHERE username=" + key + ";");
+            statement.execute("SELECT * FROM " + tableName + " WHERE username='" + key + "';");
             ResultSet resultSet = statement.getResultSet();
 
-            if (resultSet.getString("username") == null) {
+            if (!resultSet.first()) {
                 return new Response<User>(ResponseStatus.KO);
             }
 
-            return new Response<User>(ResponseStatus.OK, new User(
-                    resultSet.getString("username"),
-                    resultSet.getString("password"),
-                    resultSet.getString("type").toLowerCase().equals("root")
-                            ? UserType.ROOT : UserType.USER)
+            return new Response<User>(
+                    ResponseStatus.OK,
+                    new User(
+                            resultSet.getString("username"),
+                            resultSet.getString("password"),
+                            UserType.valueOf(resultSet.getString("type"))
+                    )
             );
 
         } catch (SQLException e) {
@@ -148,7 +155,35 @@ public class H2UserDAO implements DAO<String, User> {
      */
     @Override
     public Response<User> update(String key, User value) throws DAOException {
-        throw new UnsupportedOperationException();
+        checkDAOConnection(connection);
+
+        try {
+            Statement statement = connection.createStatement();
+
+            statement.execute("SELECT * FROM " + tableName + " WHERE username='" + key + "';");
+            ResultSet resultSet = statement.getResultSet();
+            if (!resultSet.first()) {
+                return new Response(ResponseStatus.KO);
+            }
+
+            User oldUser = new User(
+                    resultSet.getString("username"),
+                    resultSet.getString("password"),
+                    UserType.valueOf(resultSet.getString("type"))
+            );
+
+            statement.execute("UPDATE " + tableName + " SET " +
+                    "username='" + value.getUsername() + "', " +
+                    "password='" + value.getPassword() + "', " +
+                    "type='" + value.getUserType().toString() + "' " +
+                    "WHERE username='" + key + "';"
+            );
+
+            return new Response<User>(ResponseStatus.OK, oldUser);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new DAOException("can't execute SQL", e);
+        }
     }
 
     /**
@@ -166,7 +201,30 @@ public class H2UserDAO implements DAO<String, User> {
      */
     @Override
     public Response<User> delete(String key) throws DAOException {
-        throw new UnsupportedOperationException();
+        checkDAOConnection(connection);
+
+        try {
+            Statement statement = connection.createStatement();
+
+            statement.execute("SELECT * FROM " + tableName + " WHERE username='" + key + "';");
+            ResultSet resultSet = statement.getResultSet();
+            if (!resultSet.first()) {
+                return new Response(ResponseStatus.KO);
+            }
+
+            User removedUser = new User(
+                    resultSet.getString("username"),
+                    resultSet.getString("password"),
+                    UserType.valueOf(resultSet.getString("type"))
+            );
+
+            statement.execute("DELETE FROM " + tableName + " WHERE username='" + key + "';");
+
+            return new Response<User>(ResponseStatus.OK, removedUser);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new DAOException("can't execute SQL", e);
+        }
     }
 
     /**
@@ -179,7 +237,28 @@ public class H2UserDAO implements DAO<String, User> {
      */
     @Override
     public Set<String> getKeyset() throws DAOException {
-        throw new UnsupportedOperationException();
+        checkDAOConnection(connection);
+
+        try {
+            Statement statement = connection.createStatement();
+
+            statement.execute("SELECT username FROM " + tableName + ";");
+            ResultSet resultSet = statement.getResultSet();
+            if (!resultSet.first()) {
+                return new HashSet<>();
+            }
+
+            Set<String> resultKeySet = new HashSet<>();
+            do {
+                resultKeySet.add(resultSet.getString(1));
+            } while (resultSet.next());
+
+            return resultKeySet;
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new DAOException("can't execute SQL", e);
+        }
     }
 
     /**
@@ -192,7 +271,34 @@ public class H2UserDAO implements DAO<String, User> {
      */
     @Override
     public Map<String, User> getAll() throws DAOException {
-        throw new UnsupportedOperationException();
+        checkDAOConnection(connection);
+
+        try {
+            Statement statement = connection.createStatement();
+
+            statement.execute("SELECT * FROM " + tableName + ";");
+            ResultSet resultSet = statement.getResultSet();
+            if (!resultSet.first()) {
+                return new HashMap<>();
+            }
+
+            HashMap<String, User> resultMap = new HashMap<>();
+            do {
+                resultMap.put(
+                        resultSet.getString("username"),
+                        new User(
+                                resultSet.getString("username"),
+                                resultSet.getString("password"),
+                                UserType.valueOf(resultSet.getString("type"))
+                        )
+                );
+            } while (resultSet.next());
+
+            return resultMap;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new DAOException("can't execute SQL", e);
+        }
     }
 
 

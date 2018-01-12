@@ -8,6 +8,10 @@ import org.junit.*;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 import static org.junit.Assert.*;
 
@@ -69,33 +73,110 @@ public class H2UserDAOTest {
     }
 
     @Test
-    public void createWithException() throws Exception {
-        // TODO finish Unit Test
+    public void readWithOK() throws Exception {
+        User user = new User(TEST_USERNAME, TEST_PASSWORD, TEST_USERTYPE);
+        userDAO.create(user.getUsername(), user);
+
+        Response<User> response = userDAO.read(TEST_USERNAME);
+        assertEquals(ResponseStatus.OK, response.getStatus());
+        assertEquals(user, response.getBody());
+    }
+
+
+    @Test
+    public void readWithKO() throws Exception {
+        Response<User> response = userDAO.read(TEST_USERNAME);
+        assertEquals(ResponseStatus.KO, response.getStatus());
     }
 
     @Test
-    public void read() throws Exception {
-        // TODO finish Unit Test
+    public void updateWithOK() throws Exception {
+        User user = new User(TEST_USERNAME, TEST_PASSWORD, TEST_USERTYPE);
+        userDAO.create(user.getUsername(), user);
+
+        User newUser = new User(
+                TEST_USERNAME + "1",
+                TEST_PASSWORD + "1",
+                TEST_USERTYPE.equals(UserType.USER) ? UserType.ROOT : UserType.USER
+        );
+        Response<User> updateResponse = userDAO.update(TEST_USERNAME, newUser);
+
+        assertEquals(ResponseStatus.OK, updateResponse.getStatus());
+        assertEquals(user, updateResponse.getBody());
+
+        Response<User> readResponse = userDAO.read(newUser.getUsername());
+
+        assertEquals(newUser, readResponse.getBody());
     }
 
     @Test
-    public void update() throws Exception {
-        // TODO finish Unit Test
+    public void updateWithKO() throws Exception {
+        User user = new User(TEST_USERNAME, TEST_PASSWORD, TEST_USERTYPE);
+        Response<User> updateResponse = userDAO.update(TEST_USERNAME, user);
+        assertEquals(ResponseStatus.KO, updateResponse.getStatus());
     }
 
     @Test
-    public void delete() throws Exception {
-        // TODO finish Unit Test
+    public void deleteWithOK() throws Exception {
+        User user = new User(TEST_USERNAME, TEST_PASSWORD, TEST_USERTYPE);
+        userDAO.create(user.getUsername(), user);
+
+        Response<User> updateResponse = userDAO.delete(TEST_USERNAME);
+
+        assertEquals(ResponseStatus.OK, updateResponse.getStatus());
+        assertEquals(user, updateResponse.getBody());
     }
 
     @Test
-    public void getKeyset() throws Exception {
-        // TODO finish Unit Test
+    public void deleteWithKO() throws Exception {
+        Response<User> updateResponse = userDAO.delete(TEST_USERNAME);
+        assertEquals(ResponseStatus.KO, updateResponse.getStatus());
     }
 
     @Test
-    public void getAll() throws Exception {
-        // TODO finish Unit Test
+    public void getKeysetFromNotEmptyTable() throws Exception {
+        User user1 = new User(TEST_USERNAME + "1", TEST_PASSWORD, TEST_USERTYPE);
+        User user2 = new User(TEST_USERNAME + "2", TEST_PASSWORD, TEST_USERTYPE);
+        userDAO.create(user1.getUsername(), user1);
+        userDAO.create(user2.getUsername(), user2);
+
+        Set<String> expectedKeySet = new HashSet<>();
+        expectedKeySet.add(user1.getUsername());
+        expectedKeySet.add(user2.getUsername());
+
+        Set<String> actualKeySet = userDAO.getKeyset();
+
+        assertEquals(expectedKeySet, actualKeySet);
+    }
+
+    @Test
+    public void getKeysetFromEmptyTable() throws Exception {
+        Set<String> expectedEmptyKeySet = new HashSet<>();
+        Set<String> actualKeySet = userDAO.getKeyset();
+        assertEquals(expectedEmptyKeySet, actualKeySet);
+    }
+
+    @Test
+    public void getAllFromNotEmptyTable() throws Exception {
+        User user1 = new User(TEST_USERNAME + "1", TEST_PASSWORD, TEST_USERTYPE);
+        User user2 = new User(TEST_USERNAME + "2", TEST_PASSWORD, TEST_USERTYPE);
+        userDAO.create(user1.getUsername(), user1);
+        userDAO.create(user2.getUsername(), user2);
+
+        Map<String, User> expectedMap = new HashMap<>();
+        expectedMap.put(user1.getUsername(), user1);
+        expectedMap.put(user2.getUsername(), user2);
+
+        Map<String, User> actualMap = userDAO.getAll();
+
+        assertEquals(expectedMap, actualMap);
+    }
+
+    @Test
+    public void getAllFromEmptyTable() throws Exception {
+        Map<String, User> expectedEmptyMap = new HashMap<>();
+        Map<String, User> actualMap = userDAO.getAll();
+        assertEquals(expectedEmptyMap, actualMap);
     }
 
 }
