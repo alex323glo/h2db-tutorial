@@ -12,4 +12,5 @@ repositories {
 dependencies {
     testCompile 'junit:junit:4.12'
     compile 'com.h2database:h2:1.4.196'
+    compile 'com.google.code.gson:gson:2.8.2'
 }

@@ -40,10 +40,11 @@ public interface MainController {
      * Removes access token from list (in system) of authorised users.
      *
      * @param accessToken token, which will be removed from system.
+     * @return true, if delete operation was successful, or false, if it wasn't.
      * @throws AppException if params don't pass validation or service has some problems
      * with execution of this part of logic (check cause of thrown AppException).
      */
-    void logout(String accessToken) throws AppException;
+    boolean logout(String accessToken) throws AppException;
 
     /**
      * Returns JSON object of personal single user data record (accessed by unique USER access token)
